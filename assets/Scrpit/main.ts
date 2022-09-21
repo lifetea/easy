@@ -1,10 +1,18 @@
-import { _decorator, Component, Node } from 'cc';
+import { _decorator, Component, Node, PhysicsSystem2D, EPhysics2DDrawFlags } from 'cc';
 const { ccclass, property } = _decorator;
 
-@ccclass('NewComponent')
-export class NewComponent extends Component {
+@ccclass('Main')
+export class Main extends Component {
     start() {
 
+    }
+
+    onLoad(){
+        PhysicsSystem2D.instance.debugDrawFlags = EPhysics2DDrawFlags.Aabb 
+        |EPhysics2DDrawFlags.Pair |
+        EPhysics2DDrawFlags.CenterOfMass |
+        EPhysics2DDrawFlags.Joint |
+        EPhysics2DDrawFlags.Shape;
     }
 
     update(deltaTime: number) {
