@@ -4,10 +4,10 @@ const { ccclass, property } = _decorator;
   /**
  * 全局事件监听实例
  */
-export const attackTarget:EventTarget = new EventTarget();
+export const jumpTarget:EventTarget = new EventTarget();
 
 @ccclass('Jump')
-export class Attack extends Component {
+export class Jump extends Component {
     start() {
 
     }
@@ -34,7 +34,7 @@ export class Attack extends Component {
         // if (this.radius > distance) {
         //   this.dot.setPosition(moveVec.x, moveVec.y);
         // }
-        attackTarget.emit(Input.EventType.TOUCH_START, {
+        jumpTarget.emit(Input.EventType.TOUCH_START, {
             //   speedType: SpeedType.STOP,
         });
     }
@@ -46,7 +46,7 @@ export class Attack extends Component {
         // //   this.node.getComponent(UIOpacity)!.opacity = 0;
         // // }
     
-        attackTarget.emit(Input.EventType.TOUCH_END, {
+        jumpTarget.emit(Input.EventType.TOUCH_END, {
         //   speedType: SpeedType.STOP,
         });
     }
