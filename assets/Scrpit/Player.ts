@@ -8,11 +8,13 @@ import { jumpTarget} from './Jump'
 @ccclass('Player')
 export class Player extends Component {
     @property
-    moveSpeed: number = 2
+    moveSpeed: number = 20
 
     playerPos:Vec3 = null
     rigidBody:RigidBody2D = null;
     accLeft:boolean=false;
+    isJump:boolean = false;
+    jumpSpeed:number = 20;
     accRight:boolean= false;
     onLoad() {
         this.rigidBody = this.node.getComponent(RigidBody2D)
@@ -52,14 +54,19 @@ export class Player extends Component {
 
     }
     touchStart(direction:string){
+        const that = this
         if(direction == 'left'){
-            this.accLeft = true
+            that.accLeft = true
         }
         if(direction == 'right'){
-            this.accRight = true
+            that.accRight = true
         }
-        if(direction == 'up'){
-           this.jump()
+        if(direction == 'up' && that.isJump !=true){
+            that.isJump = true
+            that.scheduleOnce(function(){
+                that.isJump = false
+                that.jumpSpeed = 20
+            }, 0.5)
         }
     }
     touchEnd(direction:string){
@@ -81,11 +88,19 @@ export class Player extends Component {
         let pos = this.node.position
         // // {position:v3(pos.x, pos.y+ 100)} , {easing:'linear'}
         // tween(this.node).to(0.4, {position:v3(pos.x + 200, pos.y+ 150)}, {easing:'sineOut'}).start();
-        // this.node.setPosition(v3(pos.x, pos.y+ 150))
-        // this.rigidBody.linearVelocity = v2(4440, 4000)
+        
+        if(this.isJump){
+            this.jumpSpeed -= 0.2
+            console.log(this.jumpSpeed)
+            this.node.setPosition(v3(pos.x, pos.y + this.jumpSpeed))
+            this.rigidBody.linearVelocity = v2(0, -this.jumpSpeed)
+        }else{
+            this.rigidBody.linearVelocity = v2(0, -6)
+        }
+        
         // let force = new math.Vec2(100000, 1210200)
         // this.rigidBody.applyForceToCenter(force, false)
-        // this.rigidBody.gravityScale = 10
+        this.rigidBody.gravityScale = 2
         // this.audio.playOneShot(this.wingClip, 1);
         // regid.linearVelocity.y = 0
         // console.log(this.node.position);
@@ -112,6 +127,7 @@ export class Player extends Component {
     }
     update(deltaTime: number) {
         this.move()
+        this.jump()
         
     }
 }
