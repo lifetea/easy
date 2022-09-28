@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Vec3, Input, RigidBody, RigidBody2D, v2, v3, tween, input, EventKeyboard, KeyCode, math, Vec2 } from 'cc';
+import { _decorator, Component, Node, Vec3, Input, RigidBody, RigidBody2D, v2, v3, tween, input, EventKeyboard, KeyCode, math, Vec2, Collider2D, Contact2DType, IPhysics2DContact } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { leftTarget} from './Left'
@@ -8,13 +8,19 @@ import { jumpTarget} from './Jump'
 @ccclass('Player')
 export class Player extends Component {
     @property
-    moveSpeed: number = 20
-
+    moveSpeed: number = 4
+    @property
+    jumpSpeed:number = 20;
+    @property
+    jumpMax:number = 140;
+    jumpHeight:number = 0;
+    jumpDuring:number = 0;
     playerPos:Vec3 = null
     rigidBody:RigidBody2D = null;
     accLeft:boolean=false;
+    accUp:boolean=false;
     isJump:boolean = false;
-    jumpSpeed:number = 20;
+
     accRight:boolean= false;
     onLoad() {
         this.rigidBody = this.node.getComponent(RigidBody2D)
@@ -27,8 +33,52 @@ export class Player extends Component {
         leftTarget.on(Input.EventType.TOUCH_END, ()=>this.touchEnd('left'), this);
         jumpTarget.on(Input.EventType.TOUCH_START, ()=>this.touchStart('up'), this);
         // jumpTarget.on(Input.EventType.TOUCH_END, ()=>this.touchEnd('up'), this);
+
+        //注册单个碰撞回调  
+        let colliders = this.getComponents(Collider2D);
+        colliders.map(d=>{
+            d.on(Contact2DType.BEGIN_CONTACT, this.onBeginContact, this);
+            d.on(Contact2DType.END_CONTACT, this.onEndContact, this);
+        })
         
     }
+
+    
+    onBeginContact(selfCollider: Collider2D, otherCollider: Collider2D, contact: IPhysics2DContact | null) {
+        // if(otherCollider.tag == 2 && selfCollider.tag == 8 && this.targetEnemy == null){
+        //     // console.log("检测到敌人进入");
+        //     // this.node.destroy();
+        // }
+
+        // if(otherCollider.tag == 2 && selfCollider.tag == 1){
+        //     // console.log("收到到敌人攻击");
+        //     // this.node.destroy();
+        // }
+
+        if(otherCollider.tag == 0){
+            if(selfCollider.worldAABB.y > otherCollider.worldAABB.y){
+                this.isJump = false
+            }else{
+
+            }
+            // console.log(otherCollider.worldAABB.y)
+            // console.log("碰到墙壁了");
+            // this.node.destroy();
+        }
+    }
+
+    onEndContact(selfCollider: Collider2D, otherCollider: Collider2D, contact: IPhysics2DContact | null) {
+        // if(otherCollider.tag == 2 && selfCollider.tag == 8 && this.targetEnemy && this.targetEnemy.uuid == otherCollider.node.uuid){
+        //     // console.log("检测到敌人退出");
+        //     // this.node.destroy();
+        // }
+
+        // if(otherCollider.tag == 0){
+        //     // console.log("检测离开墙壁了");
+        //     // this.node.destroy();
+        // }
+    }
+
     keyDown(event: EventKeyboard) {
         //按下键盘事件
         switch(event.keyCode) {
@@ -37,6 +87,9 @@ export class Player extends Component {
                 break;
             case KeyCode.KEY_D:
                 this.accRight = true
+                break;
+            case KeyCode.ARROW_UP:
+                this.accUp = true
                 break;
         }
     }
@@ -50,6 +103,9 @@ export class Player extends Component {
             case KeyCode.KEY_D:
                 this.accRight = false
                 break;
+            case KeyCode.ARROW_UP:
+                this.accUp = false
+                break;
         }
 
     }
@@ -61,10 +117,11 @@ export class Player extends Component {
         if(direction == 'right'){
             that.accRight = true
         }
-        if(direction == 'up' && that.isJump !=true){
+        if(direction == 'up' && that.accUp !=true && that.isJump !=true){
+            that.accUp = true
             that.isJump = true
             that.scheduleOnce(function(){
-                that.isJump = false
+                that.accUp = false
                 that.jumpSpeed = 20
             }, 0.5)
         }
@@ -81,7 +138,7 @@ export class Player extends Component {
         this.playerPos = this.node.position
     }
 
-    jump(){
+    jump(deltaTime: number){
         // if(this.global.isGameOver || this.global.isPause){
         //     return
         // }
@@ -89,21 +146,16 @@ export class Player extends Component {
         // // {position:v3(pos.x, pos.y+ 100)} , {easing:'linear'}
         // tween(this.node).to(0.4, {position:v3(pos.x + 200, pos.y+ 150)}, {easing:'sineOut'}).start();
         
-        if(this.isJump){
-            this.jumpSpeed -= 0.2
-            console.log(this.jumpSpeed)
+        if(this.accUp){
+            this.jumpSpeed -= 0.8
+            // console.log(this.jumpSpeed)
+            this.jumpDuring += deltaTime
             this.node.setPosition(v3(pos.x, pos.y + this.jumpSpeed))
-            this.rigidBody.linearVelocity = v2(0, -this.jumpSpeed)
+            // console.log(this.jumpDuring)
+            // this.rigidBody.linearVelocity = v2(0, -this.jumpSpeed)
         }else{
-            this.rigidBody.linearVelocity = v2(0, -6)
+            this.rigidBody.linearVelocity = v2(0, -10)
         }
-        
-        // let force = new math.Vec2(100000, 1210200)
-        // this.rigidBody.applyForceToCenter(force, false)
-        this.rigidBody.gravityScale = 2
-        // this.audio.playOneShot(this.wingClip, 1);
-        // regid.linearVelocity.y = 0
-        // console.log(this.node.position);
 
     }
 
@@ -127,7 +179,7 @@ export class Player extends Component {
     }
     update(deltaTime: number) {
         this.move()
-        this.jump()
+        this.jump(deltaTime)
         
     }
 }
